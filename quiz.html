@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz - Simulado Geral FTD</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 680px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0f3460, #e94560);
+      color: #fff;
+      padding: 28px 32px;
+      text-align: center;
+    }
+
+    .header h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    .header p  { font-size: 0.9rem; opacity: 0.85; }
+
+    .progress-bar-wrap {
+      background: #e9ecef;
+      height: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #0f3460, #e94560);
+      transition: width 0.4s ease;
+    }
+
+    .question-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 28px 0;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .tag {
+      background: #f0f4ff;
+      color: #0f3460;
+      border: 1px solid #c0d0ff;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .question-area { padding: 20px 28px 10px; }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #1a1a2e;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .options { display: flex; flex-direction: column; gap: 10px; }
+
+    .option {
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #333;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .option:hover:not(.disabled) { border-color: #0f3460; background: #f0f4ff; }
+
+    .option-letter {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #e9ecef;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    .option.correct  { border-color: #28a745; background: #d4edda; }
+    .option.correct  .option-letter { background: #28a745; color: #fff; }
+    .option.wrong    { border-color: #dc3545; background: #f8d7da; }
+    .option.wrong    .option-letter { background: #dc3545; color: #fff; }
+    .option.disabled { cursor: default; }
+
+    .feedback {
+      margin: 14px 28px 0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .feedback.show { display: block; }
+    .feedback.correct { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+    .feedback.wrong   { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+
+    .actions {
+      padding: 20px 28px 28px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 11px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, #0f3460, #e94560); color: #fff; }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* Result screen */
+    .result-screen {
+      display: none;
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .result-screen.show { display: block; }
+    .score-circle {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0f3460, #e94560);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .score-circle .score-num { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+    .score-circle .score-den { font-size: 0.85rem; opacity: 0.85; }
+    .result-screen h2 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 8px; }
+    .result-screen p  { color: #666; margin-bottom: 24px; }
+
+    .review-list { text-align: left; margin-bottom: 24px; }
+    .review-item {
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+    .review-item.ok   { background: #d4edda; color: #155724; }
+    .review-item.fail { background: #f8d7da; color: #721c24; }
+    .review-item strong { display: block; margin-bottom: 2px; }
+
+    .quiz-area { display: block; }
+
+    @media (max-width: 500px) {
+      .header h1 { font-size: 1.2rem; }
+      .question-text { font-size: 0.97rem; }
+      .option { font-size: 0.88rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Simulado Geral FTD</h1>
+    <p>Matemática &amp; Literatura — Quiz de Revisão</p>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="quiz-area" id="quizArea">
+    <div class="question-meta">
+      <span id="questionCounter">Questão 1 de 15</span>
+      <span class="tag" id="subjectTag">Matemática</span>
+    </div>
+
+    <div class="question-area">
+      <p class="question-text" id="questionText"></p>
+      <div class="options" id="optionsContainer"></div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="nextBtn" disabled onclick="nextQuestion()">Próxima →</button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-screen" id="resultScreen">
+    <div class="score-circle">
+      <span class="score-num" id="scoreNum">0</span>
+      <span class="score-den" id="scoreDen">de 15</span>
+    </div>
+    <h2 id="resultTitle">Resultado</h2>
+    <p id="resultMsg"></p>
+    <div class="review-list" id="reviewList"></div>
+    <button class="btn btn-primary" onclick="restartQuiz()">Tentar novamente</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  // --- VALOR ABSOLUTO E POSICIONAL ---
+  {
+    subject: "Valor Absoluto e Posicional",
+    text: "No número 4.758, qual é o valor posicional do algarismo 7?",
+    options: ["7 unidades", "7 dezenas", "7 centenas", "7 milhares"],
+    correct: 1,
+    explanation: "O algarismo 7 está na casa das dezenas, portanto seu valor posicional é 7 dezenas = 70."
+  },
+  {
+    subject: "Valor Absoluto e Posicional",
+    text: "Qual é o valor absoluto do algarismo 5 no número 35.206?",
+    options: ["5.000", "500", "5", "50"],
+    correct: 2,
+    explanation: "O valor ABSOLUTO de um algarismo é sempre o próprio algarismo, independente da posição. Portanto é 5."
+  },
+  {
+    subject: "Valor Absoluto e Posicional",
+    text: "No número 62.483, o algarismo 4 tem valor posicional igual a:",
+    options: ["4", "40", "400", "4.000"],
+    correct: 2,
+    explanation: "O 4 está na casa das centenas (3ª posição da direita), logo seu valor posicional é 400."
+  },
+
+  // --- OPERAÇÕES COM NÚMEROS NATURAIS ---
+  {
+    subject: "Operações com Números Naturais",
+    text: "Uma escola tem 1.248 alunos no período da manhã e 976 no período da tarde. Quantos alunos a escola possui no total?",
+    options: ["2.124", "2.224", "2.214", "2.244"],
+    correct: 1,
+    explanation: "1.248 + 976 = 2.224 alunos no total."
+  },
+  {
+    subject: "Operações com Números Naturais",
+    text: "Uma caixa contém 360 laranjas. Se forem distribuídas igualmente para 8 cestas, quantas laranjas haverá em cada cesta?",
+    options: ["40", "42", "45", "48"],
+    correct: 2,
+    explanation: "360 ÷ 8 = 45 laranjas por cesta."
+  },
+  {
+    subject: "Operações com Números Naturais",
+    text: "Paulo tinha R$ 850,00. Gastou R$ 327,00 e depois recebeu R$ 215,00. Com quanto ficou?",
+    options: ["R$ 738,00", "R$ 728,00", "R$ 748,00", "R$ 718,00"],
+    correct: 0,
+    explanation: "850 − 327 = 523; depois 523 + 215 = R$ 738,00."
+  },
+  {
+    subject: "Operações com Números Naturais",
+    text: "Uma fábrica produz 125 peças por hora. Quantas peças serão produzidas em 8 horas de trabalho?",
+    options: ["900", "1.000", "1.100", "1.200"],
+    correct: 1,
+    explanation: "125 × 8 = 1.000 peças."
+  },
+
+  // --- EXPRESSÃO NUMÉRICA ---
+  {
+    subject: "Expressão Numérica",
+    text: "Calcule: 4 + 3 × 2 − 1",
+    options: ["13", "9", "15", "14"],
+    correct: 1,
+    explanation: "Primeiro a multiplicação: 3 × 2 = 6. Depois: 4 + 6 − 1 = 9."
+  },
+  {
+    subject: "Expressão Numérica",
+    text: "Qual é o resultado de: (8 + 4) ÷ 3 × 2?",
+    options: ["6", "8", "10", "12"],
+    correct: 1,
+    explanation: "Parênteses primeiro: (8+4) = 12. Depois da esquerda p/ direita: 12 ÷ 3 = 4; 4 × 2 = 8."
+  },
+  {
+    subject: "Expressão Numérica",
+    text: "Calcule: 50 − (3² + 1) × 2",
+    options: ["30", "32", "20", "14"],
+    correct: 0,
+    explanation: "3² = 9; depois 9 + 1 = 10; depois 10 × 2 = 20; e por fim 50 − 20 = 30."
+  },
+  {
+    subject: "Expressão Numérica",
+    text: "Em uma expressão numérica, qual é a ordem correta das operações?",
+    options: [
+      "Adição → Subtração → Multiplicação → Divisão",
+      "Parênteses → Colchetes → Potências → × e ÷ → + e −",
+      "Multiplicação → Divisão → Parênteses → Adição",
+      "Potências → Parênteses → Adição → Multiplicação"
+    ],
+    correct: 1,
+    explanation: "A ordem correta é: primeiro parênteses ( ), depois colchetes [ ], depois chaves { }, em seguida potências e raízes, depois multiplicações e divisões (da esquerda p/ direita), e por último adições e subtrações."
+  },
+
+  // --- SÓLIDOS GEOMÉTRICOS ---
+  {
+    subject: "Sólidos Geométricos",
+    text: "Quantas faces tem um cubo?",
+    options: ["4", "5", "6", "8"],
+    correct: 2,
+    explanation: "O cubo possui 6 faces, todas quadradas e iguais."
+  },
+  {
+    subject: "Sólidos Geométricos",
+    text: "Qual sólido geométrico tem apenas 1 face curva e nenhuma aresta?",
+    options: ["Cone", "Cilindro", "Esfera", "Pirâmide"],
+    correct: 2,
+    explanation: "A esfera possui somente 1 face curva, sem arestas e sem vértices."
+  },
+  {
+    subject: "Sólidos Geométricos",
+    text: "Uma pirâmide de base quadrada possui quantos vértices?",
+    options: ["4", "5", "6", "8"],
+    correct: 1,
+    explanation: "Uma pirâmide de base quadrada tem 4 vértices da base + 1 vértice do ápice = 5 vértices."
+  },
+
+  // --- LITERATURA: FÁBULA ---
+  {
+    subject: "Literatura — Fábula",
+    text: "O gênero textual FÁBULA tem como característica principal:",
+    options: [
+      "Narrar fatos históricos reais com datas precisas",
+      "Apresentar personagens animais que ensinam uma lição moral",
+      "Descrever paisagens de forma poética sem personagens",
+      "Relatar aventuras de heróis humanos em batalhas"
+    ],
+    correct: 1,
+    explanation: "A fábula é uma narrativa curta, geralmente com animais como personagens, e termina com uma moral (lição de vida)."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+let results = [];
+
+function loadQuestion() {
+  const q = questions[current];
+  const total = questions.length;
+
+  document.getElementById("progressBar").style.width = ((current / total) * 100) + "%";
+  document.getElementById("questionCounter").textContent = `Questão ${current + 1} de ${total}`;
+  document.getElementById("subjectTag").textContent = q.subject;
+  document.getElementById("questionText").textContent = q.text;
+
+  const container = document.getElementById("optionsContainer");
+  container.innerHTML = "";
+  const letters = ["A", "B", "C", "D"];
+
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement("div");
+    btn.className = "option";
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectOption(i, btn);
+    container.appendChild(btn);
+  });
+
+  const feedback = document.getElementById("feedback");
+  feedback.className = "feedback";
+  feedback.textContent = "";
+
+  document.getElementById("nextBtn").disabled = true;
+  answered = false;
+
+  const isLast = current === total - 1;
+  document.getElementById("nextBtn").textContent = isLast ? "Ver resultado →" : "Próxima →";
+}
+
+function selectOption(index, btn) {
+  if (answered) return;
+  answered = true;
+
+  const q = questions[current];
+  const options = document.querySelectorAll(".option");
+
+  options.forEach(o => o.classList.add("disabled"));
+
+  const isCorrect = index === q.correct;
+  if (isCorrect) score++;
+
+  btn.classList.add(isCorrect ? "correct" : "wrong");
+  options[q.correct].classList.add("correct");
+
+  const feedback = document.getElementById("feedback");
+  feedback.textContent = (isCorrect ? "✓ Correto! " : "✗ Errado. ") + q.explanation;
+  feedback.className = "feedback show " + (isCorrect ? "correct" : "wrong");
+
+  results.push({ q, chosen: index, correct: isCorrect });
+
+  document.getElementById("nextBtn").disabled = false;
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) {
+    showResult();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById("quizArea").style.display = "none";
+  document.getElementById("progressBar").style.width = "100%";
+
+  const resultScreen = document.getElementById("resultScreen");
+  resultScreen.classList.add("show");
+
+  const total = questions.length;
+  document.getElementById("scoreNum").textContent = score;
+  document.getElementById("scoreDen").textContent = `de ${total}`;
+
+  const pct = Math.round((score / total) * 100);
+  let title, msg;
+  if (pct >= 80) {
+    title = "Excelente! 🎉";
+    msg = `Você acertou ${score} de ${total} questões (${pct}%). Ótima preparação para o simulado!`;
+  } else if (pct >= 60) {
+    title = "Bom resultado!";
+    msg = `Você acertou ${score} de ${total} questões (${pct}%). Revise os tópicos errados e você estará pronto!`;
+  } else {
+    title = "Continue praticando!";
+    msg = `Você acertou ${score} de ${total} questões (${pct}%). Revise bem o conteúdo e tente novamente.`;
+  }
+
+  document.getElementById("resultTitle").textContent = title;
+  document.getElementById("resultMsg").textContent = msg;
+
+  const reviewList = document.getElementById("reviewList");
+  reviewList.innerHTML = "<strong style='display:block;margin-bottom:10px;color:#1a1a2e'>Resumo das respostas:</strong>";
+  results.forEach((r, i) => {
+    const div = document.createElement("div");
+    div.className = "review-item " + (r.correct ? "ok" : "fail");
+    div.innerHTML = `<strong>${i + 1}. ${r.q.subject}</strong>${r.q.text.substring(0, 60)}${r.q.text.length > 60 ? "…" : ""}`;
+    reviewList.appendChild(div);
+  });
+}
+
+function restartQuiz() {
+  current = 0;
+  score = 0;
+  answered = false;
+  results = [];
+  document.getElementById("quizArea").style.display = "block";
+  document.getElementById("resultScreen").classList.remove("show");
+  loadQuestion();
+}
+
+loadQuestion();
+</script>
+</body>
+</html>
